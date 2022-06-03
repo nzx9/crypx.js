@@ -102,3 +102,9 @@ dist
 
 # TernJS port file
 .tern-port
+
+# remove test files
+*.txt
+
+# remove encrypted files
+*.crypx
