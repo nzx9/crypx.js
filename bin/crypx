@@ -1,9 +1,10 @@
+#! /usr/bin/env node
+
 const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
 const { encryptFile, decryptFile } = require("../src/crypx");
 const fs = require("fs");
 const path = require("path");
-const { version } = require("../package.json");
 const print = require("../src/print");
 
 yargs(hideBin(process.argv))
