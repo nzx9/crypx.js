@@ -1,0 +1,110 @@
+const yargs = require("yargs/yargs");
+const { hideBin } = require("yargs/helpers");
+const { encryptFile, decryptFile } = require("../src/crypx");
+const fs = require("fs");
+const path = require("path");
+const { version } = require("../package.json");
+const print = require("../src/print");
+
+yargs(hideBin(process.argv))
+  .usage("$0 <cmd> [args]")
+  .command(
+    "encrypt [files...]",
+    "Encrypt files",
+    (yargs) => {
+      yargs.positional("port", {
+        describe: "port to bind on",
+        default: 5000,
+      });
+    },
+    (argv) => {
+      try {
+        let __files = [];
+        if (argv.root_dir) {
+          for (const file of argv.files) {
+            __files.push(path.join(argv.root_dir, file));
+          }
+        } else {
+          __files = argv.files;
+        }
+        const key = argv.key;
+        const algorithm = argv.algorithm || "aes-256-cbc";
+        const unicode = argv.unicode || "utf8";
+        for (const file of __files) {
+          const out = encryptFile(file, key, algorithm, unicode);
+          fs.writeFileSync(file + ".crypx", out, { flag: "w+" });
+          if (argv.delete && fs.existsSync(file)) {
+            fs.unlinkSync(file);
+            print.success_file(file, "encrypted and deleted.");
+          } else {
+            print.success_file(file, "encrypted");
+          }
+        }
+      } catch (error) {
+        print.error(error.message);
+      }
+    }
+  )
+  .command(
+    "decrypt [files...]",
+    "Decrypt files",
+    (yargs) => {
+      yargs.positional("files", {
+        describe: "files to decrypt",
+      });
+    },
+    (argv) => {
+      try {
+        let __files = [];
+        if (argv.root_dir) {
+          for (const file of argv.files) {
+            __files.push(path.join(argv.root_dir, file));
+          }
+        } else {
+          __files = argv.files;
+        }
+        const key = argv.key;
+        const algorithm = argv.algorithm || "aes-256-cbc";
+        for (const file of __files) {
+          const out = decryptFile(file, key, algorithm);
+          const _f = file.substr(0, file.length - 6);
+          fs.writeFileSync(_f, out, { flag: "w+" });
+          if (argv.delete && fs.existsSync(file)) {
+            fs.unlinkSync(file);
+            print.success_file(file, "decrypted and deleted.");
+          } else {
+            print.success_file(file, "decrypted.");
+          }
+        }
+      } catch (error) {
+        print.error(error.message);
+      }
+    }
+  )
+  .option("key", {
+    alias: "K",
+    type: "string",
+    description: "Key to decrypt files",
+  })
+  .option("algoritm", {
+    alias: "A",
+    type: "string",
+    description: "Algorithm to use/used for ecryption",
+  })
+  .option("delete", {
+    alias: "D",
+    type: "boolean",
+    description: "Delete given files after operation",
+  })
+  .option("root_dir", {
+    alias: "R",
+    type: "string",
+    description: "Root location of the files",
+  })
+  .option("unicode", {
+    alias: "U",
+    type: "string",
+    description: "Unicode used to read files",
+  })
+  .demandCommand(1)
+  .parse();
